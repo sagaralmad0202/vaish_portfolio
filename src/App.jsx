@@ -1,24 +1,124 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import emailjs from '@emailjs/browser';
+
+const emailJsConfig = {
+  serviceId: import.meta.env.VITE_EMAILJS_SERVICE_ID?.trim() || '',
+  templateId: import.meta.env.VITE_EMAILJS_TEMPLATE_ID?.trim() || '',
+  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY?.trim() || ''
+};
+
+const EMAILJS_PLACEHOLDER_VALUES = new Set([
+  'your_emailjs_service_id',
+  'your_emailjs_template_id',
+  'your_emailjs_public_key',
+  'service_portfolio',
+  'template_portfolio',
+  'user_public_key'
+]);
+
+const hasEmailJsConfig = Object.values(emailJsConfig).every(
+  value => value && !EMAILJS_PLACEHOLDER_VALUES.has(value)
+);
+
+const TYPING_TEXTS = [
+  'Data Analyst',
+  'Python Developer',
+  'Dashboard Designer',
+  'Full-Stack Developer',
+  'Problem Solver'
+];
+
+function SkeletonLoader({ isExiting }) {
+  return (
+    <div className={`skeleton-container ${isExiting ? 'exiting' : ''}`}>
+      {/* Navbar Skeleton */}
+      <nav className="skeleton-navbar">
+        <div className="skeleton-logo bone"></div>
+        <div className="skeleton-nav-links">
+          <div className="skeleton-nav-link skeleton-nav-link-about bone"></div>
+          <div className="skeleton-nav-link skeleton-nav-link-specialization bone"></div>
+          <div className="skeleton-nav-link skeleton-nav-link-portfolio bone"></div>
+          <div className="skeleton-nav-link skeleton-nav-link-experience bone"></div>
+          <div className="skeleton-nav-link skeleton-nav-link-education bone"></div>
+          <div className="skeleton-nav-link skeleton-nav-link-contact bone"></div>
+        </div>
+      </nav>
+
+      {/* Hero Skeleton */}
+      <div className="skeleton-hero">
+        <div className="skeleton-hero-content">
+          <div className="skeleton-hero-text">
+            <div className="skeleton-greeting bone"></div>
+            <div className="skeleton-name bone"></div>
+            <div className="skeleton-role bone"></div>
+            <div className="skeleton-desc">
+              <div className="skeleton-desc-line bone"></div>
+              <div className="skeleton-desc-line bone"></div>
+              <div className="skeleton-desc-line bone"></div>
+            </div>
+            <div className="skeleton-actions">
+              <div className="skeleton-btn skeleton-btn-primary bone"></div>
+              <div className="skeleton-btn skeleton-btn-outline"></div>
+            </div>
+            <div className="skeleton-socials">
+              <div className="skeleton-social bone"></div>
+              <div className="skeleton-social bone"></div>
+              <div className="skeleton-social bone"></div>
+            </div>
+          </div>
+          <div className="skeleton-hero-visual">
+            <div className="skeleton-avatar-wrap">
+              <div className="skeleton-avatar-border">
+                <div className="skeleton-avatar bone"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function App() {
+  // ---- Skeleton Loading State ----
+  const [isLoading, setIsLoading] = useState(true);
+  const [isExiting, setIsExiting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
+  const [submitMessage, setSubmitMessage] = useState('');
+
+  useEffect(() => {
+    // Show skeleton for 2 seconds, then play exit animation
+    const timer = setTimeout(() => {
+      setIsExiting(true);
+      // After exit animation completes (300ms), remove skeleton
+      setTimeout(() => {
+        setIsLoading(false);
+        setIsExiting(false);
+      }, 300);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   // ---- Typing Effect ----
-  const texts = [
-    'Data Analyst',
-    'Python Developer',
-    'Dashboard Designer',
-    'Full-Stack Developer',
-    'Problem Solver'
-  ];
   const [typedText, setTypedText] = useState('');
   const [textIndex, setTextIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const currentText = texts[textIndex];
+    const currentText = TYPING_TEXTS[textIndex];
     let timer;
 
-    if (isDeleting) {
+    if (!isDeleting && charIndex === currentText.length) {
+      timer = setTimeout(() => setIsDeleting(true), 2000);
+    } else if (isDeleting && charIndex === 0) {
+      timer = setTimeout(() => {
+        setIsDeleting(false);
+        setTextIndex(prev => (prev + 1) % TYPING_TEXTS.length);
+      }, 40);
+    } else if (isDeleting) {
       timer = setTimeout(() => {
         setTypedText(currentText.substring(0, charIndex - 1));
         setCharIndex(prev => prev - 1);
@@ -28,13 +128,6 @@ function App() {
         setTypedText(currentText.substring(0, charIndex + 1));
         setCharIndex(prev => prev + 1);
       }, 80);
-    }
-
-    if (!isDeleting && charIndex === currentText.length) {
-      timer = setTimeout(() => setIsDeleting(true), 2000);
-    } else if (isDeleting && charIndex === 0) {
-      setIsDeleting(false);
-      setTextIndex(prev => (prev + 1) % texts.length);
     }
 
     return () => clearTimeout(timer);
@@ -101,15 +194,66 @@ function App() {
     }
   };
 
-  // ---- Contact Form Handler ----
-  const handleContactSubmit = (e) => {
+  // ---- Contact Form Handler with EmailJS ----
+  const handleContactSubmit = async (e) => {
     e.preventDefault();
-    alert('Thank you! Your message has been received.');
-    e.target.reset();
+    setSubmitStatus(null);
+    setSubmitMessage('');
+
+    if (!hasEmailJsConfig) {
+      setSubmitStatus('error');
+      setSubmitMessage('Email service is not configured yet. Please email me directly at vaishnavihiremath33@gmail.com.');
+      return;
+    }
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    const fromName = String(formData.get('from_name') || '').trim();
+    const fromEmail = String(formData.get('from_email') || '').trim();
+    const subject = String(formData.get('subject') || '').trim();
+    const message = String(formData.get('message') || '').trim();
+
+    const templateParams = {
+      from_name: fromName,
+      from_email: fromEmail,
+      reply_to: fromEmail,
+      subject: subject || 'Portfolio contact form message',
+      message,
+      to_name: 'Vaishnavi Hiremath',
+      user_name: fromName,
+      user_email: fromEmail
+    };
+
+    setIsSubmitting(true);
+
+    try {
+      await emailjs.send(emailJsConfig.serviceId, emailJsConfig.templateId, templateParams, {
+        publicKey: emailJsConfig.publicKey
+      });
+
+      form.reset();
+      setSubmitStatus('success');
+      setSubmitMessage('Your message has been sent successfully!');
+      setTimeout(() => {
+        setSubmitStatus(null);
+        setSubmitMessage('');
+      }, 5000);
+    } catch (error) {
+      console.error('EmailJS error:', error);
+      setSubmitStatus('error');
+      setSubmitMessage('Failed to send message. Please try again or email me directly at vaishnavihiremath33@gmail.com.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <>
+      {/* Skeleton Loader */}
+      {isLoading && <SkeletonLoader isExiting={isExiting} />}
+
+      {/* Main Content - fades in after skeleton */}
+      <div className={`main-content ${!isLoading ? 'content-visible' : ''}`}>
       {/* Navbar */}
       <nav className={`navbar ${isScrolled ? 'scrolled' : ''} ${isNavOpen ? 'open' : ''}`} id="navbar">
         <a href="#hero" className="nav-logo" onClick={(e) => scrollToSection(e, 'hero')}>Vaishnavi</a>
@@ -133,7 +277,7 @@ function App() {
             className={`nav-link ${activeSection === 'portfolio' ? 'active' : ''}`}
             onClick={(e) => scrollToSection(e, 'portfolio')}
           >
-            Portfolio
+            My Projects
           </a>
           <a
             href="#experience"
@@ -276,10 +420,10 @@ function App() {
         </div>
       </section>
 
-      {/* Portfolio / Projects Section */}
+      {/* Projects Section */}
       <section className="section" id="portfolio">
         <div className="container">
-          <h2 className="section-title">My <span>Portfolio</span></h2>
+          <h2 className="section-title">My <span>Projects</span></h2>
           <p className="section-subtitle">Projects I've built</p>
           <div className="projects-grid">
             <div className="project-card" data-animate="">
@@ -295,7 +439,7 @@ function App() {
                 <div className="project-tech-tags">
                   <span>React.js</span><span>FastAPI</span><span>SQLAlchemy</span><span>Tailwind CSS</span><span>Python</span>
                 </div>
-                <a href="https://github.com/VaishnaviHiremath12/SHOPEASE-E-Commerce-website-" target="_blank" rel="noopener noreferrer" className="project-link">View Project →</a>
+                <a href="https://github.com/VaishnaviHiremath12/SHOPEASE-E-Commerce-website-" target="_blank" rel="noopener noreferrer" className="project-link">View Project</a>
               </div>
             </div>
 
@@ -312,7 +456,7 @@ function App() {
                 <div className="project-tech-tags">
                   <span>SQL</span><span>Power BI</span><span>Excel</span><span>DAX</span><span>Data Modeling</span>
                 </div>
-                <a href="https://github.com/VaishnaviHiremath12" target="_blank" rel="noopener noreferrer" className="project-link">View Project →</a>
+                <a href="https://github.com/VaishnaviHiremath12" target="_blank" rel="noopener noreferrer" className="project-link">View Project</a>
               </div>
             </div>
           </div>
@@ -332,7 +476,7 @@ function App() {
                     <h3>Python Developer Intern</h3>
                     <p className="exp-company">Minds NXT</p>
                   </div>
-                  <span className="exp-date">Jan 2026 — Present</span>
+                  <span className="exp-date">Jan 2026 - Present</span>
                 </div>
                 <ul>
                   <li>Developed and deployed RESTful APIs using Python and FastAPI to support backend functionality and CRUD operations</li>
@@ -347,9 +491,9 @@ function App() {
                 <div className="exp-header">
                   <div>
                     <h3>Data Analyst Intern</h3>
-                    <p className="exp-company">Ai variant — Bangalore</p>
+                    <p className="exp-company">Ai variant - Bangalore</p>
                   </div>
-                  <span className="exp-date">Jun 2025 — Sep 2025</span>
+                  <span className="exp-date">Jun 2025 - Sep 2025</span>
                 </div>
                 <ul>
                   <li>Analyzed large-scale business datasets using SQL, Python, and Excel to uncover trends and perform statistical analysis</li>
@@ -368,9 +512,9 @@ function App() {
           <h2 className="section-title">My <span>Education</span></h2>
           <div className="education-card" data-animate="">
             <div className="edu-info">
-              <h3>B.Tech — Electronics &amp; Communication Engineering</h3>
+              <h3>B.Tech - Electronics &amp; Communication Engineering</h3>
               <p className="edu-school">Appa Institute of Engineering &amp; Technology, Kalaburagi</p>
-              <p className="edu-year">2021 — 2025</p>
+              <p className="edu-year">2021 - 2025</p>
               <p className="edu-cgpa">CGPA: <strong>9.0 / 10</strong></p>
             </div>
           </div>
@@ -380,19 +524,19 @@ function App() {
             <div className="cert-item" data-animate="">
               <div>
                 <h4>Data Visualization: Empowering Business with Effective Insights</h4>
-                <p>Tata Forage · Aug 2025</p>
+                <p>Tata Forage - Aug 2025</p>
               </div>
             </div>
             <div className="cert-item" data-animate="">
               <div>
                 <h4>Data Analyst Certification</h4>
-                <p>ExcelR · Aug 2025</p>
+                <p>ExcelR - Aug 2025</p>
               </div>
             </div>
             <div className="cert-item" data-animate="">
               <div>
                 <h4>Python Libraries for Data Science</h4>
-                <p>Simplilearn SkillUp · Sep 2025</p>
+                <p>Simplilearn SkillUp - Sep 2025</p>
               </div>
             </div>
             <div className="cert-item" data-animate="">
@@ -404,7 +548,7 @@ function App() {
             <div className="cert-item" data-animate="">
               <div>
                 <h4>Deloitte Technology Virtual Internship</h4>
-                <p>Deloitte Forage · Mar 2026</p>
+                <p>Deloitte Forage - Mar 2026</p>
               </div>
             </div>
           </div>
@@ -451,11 +595,27 @@ function App() {
               </div>
             </div>
             <form className="contact-form" onSubmit={handleContactSubmit}>
-              <input type="text" placeholder="Your Name" required />
-              <input type="email" placeholder="Your Email" required />
-              <input type="text" placeholder="Subject" />
-              <textarea placeholder="Your Message" rows={5} required></textarea>
-              <button type="submit" className="btn btn-primary">Send Message</button>
+              <input type="text" name="from_name" placeholder="Your Name" autoComplete="name" required />
+              <input type="email" name="from_email" placeholder="Your Email" autoComplete="email" required />
+              <input type="text" name="subject" placeholder="Subject" autoComplete="off" />
+              <textarea name="message" placeholder="Your Message" rows={5} required></textarea>
+              
+              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? 'Sending...' : 'Send Message'}
+              </button>
+
+              {submitStatus === 'success' && (
+                <div className="form-status-msg form-status-success" role="status" aria-live="polite">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>{submitMessage}</span>
+                </div>
+              )}
+              {submitStatus === 'error' && (
+                <div className="form-status-msg form-status-error" role="alert" aria-live="assertive">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span>{submitMessage}</span>
+                </div>
+              )}
             </form>
           </div>
         </div>
@@ -464,9 +624,10 @@ function App() {
       {/* Footer */}
       <footer className="footer">
         <div className="container">
-          <p>© 2026 Vaishnavi Hiremath. All rights reserved.</p>
+          <p>&copy; 2026 Vaishnavi Hiremath. All rights reserved.</p>
         </div>
       </footer>
+      </div>
     </>
   );
 }
