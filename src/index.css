@@ -89,6 +89,10 @@ img {
     padding: 0 24px;
 }
 
+body.nav-menu-open {
+    overflow: hidden;
+}
+
 /* ============================================================
    NAVBAR
    ============================================================ */
@@ -1052,42 +1056,72 @@ img {
    ============================================================ */
 @media (max-width: 768px) {
     .navbar {
+        z-index: 1000;
         padding: 0 20px;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-        background: rgba(247, 245, 240, 0.96);
+        background: rgba(247, 245, 240, 0.98);
+    }
+
+    .navbar.open {
+        background: var(--color-canvas);
+        border-bottom-color: transparent;
     }
 
     .nav-logo {
-        z-index: 1001;
+        position: relative;
+        z-index: 1002;
     }
 
     .nav-links {
-        display: none !important;
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(247, 245, 240, 0.98);
+        inset: 0;
+        z-index: 1001;
+        display: flex !important;
         flex-direction: column;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
-        gap: 24px;
-        z-index: 999;
+        gap: 4px;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 88px 36px 42px;
+        background: var(--color-canvas);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(-8px);
+        transition: opacity 220ms ease, visibility 220ms ease, transform 220ms ease;
     }
 
     .nav-links.open {
-        display: flex !important;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateY(0);
     }
 
     .nav-links .nav-link {
-        font-size: 1.1rem;
+        width: 100%;
+        padding: 12px 0;
+        font-family: var(--font-heading);
+        font-size: 1.18rem;
+        font-weight: 600;
+        line-height: 1.3;
+        color: var(--color-ink);
+    }
+
+    .nav-links .nav-link::after {
+        bottom: 6px;
+        height: 1.5px;
     }
 
     .nav-toggle {
+        position: relative;
+        z-index: 1002;
         display: flex;
-        z-index: 1001;
     }
 
-    /* Hamburger → X */
+    /* Hamburger to close icon */
     .navbar.open .nav-toggle span:nth-child(1) {
         transform: translateY(6.5px) rotate(45deg);
     }
@@ -1097,7 +1131,6 @@ img {
     .navbar.open .nav-toggle span:nth-child(3) {
         transform: translateY(-6.5px) rotate(-45deg);
     }
-
     .hero {
         padding: 100px 20px 64px;
     }
@@ -1173,7 +1206,7 @@ img {
 }
 
 /* ============================================================
-   MAIN CONTENT — Reveal after skeleton
+   MAIN CONTENT - Reveal after skeleton
    ============================================================ */
 .main-content {
     opacity: 0;
@@ -1184,215 +1217,275 @@ img {
 
 .main-content.content-visible {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
 }
 
 /* ============================================================
-   SKELETON LOADER (Warm Minimalism)
+   SKELETON LOADER (YouTube-style page preview)
    ============================================================ */
-.skeleton-container {
+.page-skeleton {
     position: fixed;
     inset: 0;
-    background: var(--color-canvas);
     z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    transition: opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--color-surface);
+    overflow: hidden;
+    transition: opacity 260ms ease;
     pointer-events: auto;
 }
 
-.skeleton-container.exiting {
+.page-skeleton.exiting {
     opacity: 0;
     pointer-events: none;
 }
 
-.skeleton-navbar {
+.skeleton-nav {
+    height: 56px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 40px;
-    height: 56px;
-    background: transparent;
-}
-
-.skeleton-logo {
-    width: 80px;
-    height: 18px;
-    border-radius: 4px;
+    background: var(--color-canvas);
 }
 
 .skeleton-nav-links {
     display: flex;
+    align-items: center;
     gap: 32px;
 }
 
-.skeleton-nav-link {
-    height: 12px;
+.skeleton-block {
+    display: block;
+    background: #E8E4DC;
     border-radius: 4px;
+    animation: skeleton-pulse 1.35s ease-in-out infinite;
 }
 
-/* Organic nav widths representing real typography */
-.skeleton-nav-link-about { width: 42px; }
-.skeleton-nav-link-specialization { width: 88px; }
-.skeleton-nav-link-portfolio { width: 82px; }
-.skeleton-nav-link-experience { width: 74px; }
-.skeleton-nav-link-education { width: 68px; }
-.skeleton-nav-link-contact { width: 80px; }
+.skeleton-logo {
+    width: 86px;
+    height: 16px;
+}
 
-.skeleton-hero {
-    flex: 1;
+.skeleton-nav-links .skeleton-block {
+    height: 12px;
+}
+
+.skeleton-nav-about { width: 44px; }
+.skeleton-nav-specialization { width: 94px; }
+.skeleton-nav-projects { width: 82px; }
+.skeleton-nav-experience { width: 78px; }
+.skeleton-nav-education { width: 72px; }
+.skeleton-nav-contact { width: 84px; }
+
+.skeleton-menu-icon {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.skeleton-menu-icon .skeleton-block {
+    width: 22px;
+    height: 2px;
+    border-radius: 2px;
+}
+
+.skeleton-shell {
+    min-height: calc(100vh - 56px);
     display: flex;
     align-items: center;
-    padding: 120px 40px 80px;
-    background: var(--color-surface);
+    padding: 96px 40px 80px;
 }
 
-.skeleton-hero-content {
+.skeleton-hero-layout {
+    width: 100%;
     max-width: 1080px;
     margin: 0 auto;
-    width: 100%;
     display: grid;
     grid-template-columns: 1.2fr 0.8fr;
     gap: 64px;
     align-items: center;
 }
 
-.skeleton-hero-text {
+.skeleton-copy {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
 }
 
-.skeleton-greeting {
-    width: 100px;
+.skeleton-kicker {
+    width: 88px;
     height: 12px;
-    border-radius: 4px;
+    margin-bottom: 22px;
+}
+
+.skeleton-heading {
+    width: min(100%, 590px);
+    height: 54px;
+    border-radius: 8px;
     margin-bottom: 16px;
 }
 
-.skeleton-name {
-    width: 320px;
-    height: 48px;
-    border-radius: 6px;
-    margin-bottom: 12px;
-}
-
-.skeleton-role {
-    width: 180px;
+.skeleton-job-line {
+    width: 190px;
     height: 24px;
-    border-radius: 4px;
-    margin-bottom: 24px;
+    margin-bottom: 30px;
 }
 
-.skeleton-desc {
+.skeleton-paragraph {
+    width: 100%;
+    max-width: 500px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-bottom: 36px;
+    gap: 10px;
+    margin-bottom: 38px;
 }
 
-.skeleton-desc-line {
+.skeleton-paragraph .skeleton-block {
     height: 12px;
-    border-radius: 4px;
-    width: 100%;
-    max-width: 480px;
 }
 
-.skeleton-desc-line:nth-child(2) {
-    width: 90%;
-}
+.skeleton-paragraph .skeleton-block:nth-child(1) { width: 100%; }
+.skeleton-paragraph .skeleton-block:nth-child(2) { width: 88%; }
+.skeleton-paragraph .skeleton-block:nth-child(3) { width: 72%; }
 
-.skeleton-desc-line:nth-child(3) {
-    width: 75%;
-}
-
-.skeleton-actions {
+.skeleton-actions-row {
     display: flex;
-    gap: 12px;
-    margin-bottom: 40px;
+    gap: 14px;
+    margin-bottom: 42px;
 }
 
-/* Specific primary vs outline button representation */
-.skeleton-btn-primary {
-    width: 140px;
-    height: 40px;
+.skeleton-button {
+    width: 180px;
+    height: 44px;
     border-radius: 6px;
 }
 
-.skeleton-btn-outline {
-    width: 140px;
-    height: 40px;
-    border-radius: 6px;
-    background: transparent;
-    border: 1.5px solid var(--color-border);
+.skeleton-button-light {
+    width: 196px;
+    background: #F1EEE8;
+    box-shadow: inset 0 0 0 1px #E0DCD3;
 }
 
-.skeleton-socials {
+.skeleton-social-row {
     display: flex;
     gap: 12px;
 }
 
-.skeleton-social {
+.skeleton-social-dot {
     width: 36px;
     height: 36px;
     border-radius: 50%;
 }
 
-.skeleton-hero-visual {
+.skeleton-visual {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.skeleton-avatar-wrap {
-    width: 420px;
-    height: 420px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: gentleFloat 8s ease-in-out infinite;
+.skeleton-figure {
+    width: min(100%, 420px);
+    aspect-ratio: 4 / 5;
+    border-radius: 8px;
 }
 
-/* Beautiful dashed blueprint ring around avatar */
-.skeleton-avatar-border {
-    width: 380px;
-    height: 380px;
-    border: 1.5px dashed var(--color-border);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.skeleton-avatar {
-    width: 90%;
-    height: 90%;
-    max-width: 342px;
-    max-height: 342px;
-    border-radius: 50%;
-}
-
-/* Bones - Warm Low-Contrast Shimmer Animation */
-.bone {
-    background: linear-gradient(90deg, 
-        var(--color-surface-alt) 25%, 
-        var(--color-canvas) 37%, 
-        var(--color-surface-alt) 63%
-    );
-    background-size: 200% 100%;
-    position: relative;
-    overflow: hidden;
-    animation: skeleton-shimmer 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-@keyframes skeleton-shimmer {
-    0% {
-        background-position: -200% 0;
+@keyframes skeleton-pulse {
+    0%, 100% {
+        background-color: #E8E4DC;
     }
-    100% {
-        background-position: 200% 0;
+    50% {
+        background-color: #F2EFE9;
     }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .skeleton-block {
+        animation: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-skeleton {
+        overflow-y: auto;
+    }
+
+    .skeleton-nav {
+        padding: 0 20px;
+    }
+
+    .skeleton-nav-links {
+        display: none;
+    }
+
+    .skeleton-menu-icon {
+        display: flex;
+    }
+
+    .skeleton-shell {
+        min-height: calc(100vh - 56px);
+        padding: 76px 20px 64px;
+        align-items: flex-start;
+    }
+
+    .skeleton-hero-layout {
+        grid-template-columns: 1fr;
+        gap: 42px;
+        text-align: center;
+    }
+
+    .skeleton-copy {
+        align-items: center;
+    }
+
+    .skeleton-kicker {
+        width: 76px;
+        margin-bottom: 20px;
+    }
+
+    .skeleton-heading {
+        width: min(100%, 300px);
+        height: 42px;
+    }
+
+    .skeleton-job-line {
+        width: 160px;
+        height: 22px;
+        margin-bottom: 28px;
+    }
+
+    .skeleton-paragraph {
+        max-width: 320px;
+        align-items: center;
+        margin-bottom: 34px;
+    }
+
+    .skeleton-paragraph .skeleton-block:nth-child(1) { width: 100%; }
+    .skeleton-paragraph .skeleton-block:nth-child(2) { width: 92%; }
+    .skeleton-paragraph .skeleton-block:nth-child(3) { width: 76%; }
+
+    .skeleton-actions-row {
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 38px;
+    }
+
+    .skeleton-button {
+        width: 132px;
+        height: 42px;
+    }
+
+    .skeleton-button-light {
+        width: 144px;
+    }
+
+    .skeleton-social-row {
+        justify-content: center;
+    }
+
+    .skeleton-figure {
+        width: min(72vw, 260px);
+        aspect-ratio: 3 / 4;
+    }
+}
 /* Contact Form Submission Inline Feedback */
 .form-status-msg {
     display: flex;
@@ -1436,58 +1529,5 @@ img {
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-
-/* Mobile Responsiveness for Skeleton */
-@media (max-width: 768px) {
-    .skeleton-navbar {
-        padding: 0 20px;
-    }
-
-    .skeleton-nav-links {
-        display: none !important;
-    }
-
-    .skeleton-hero {
-        padding: 100px 20px 64px;
-    }
-
-    .skeleton-hero-content {
-        grid-template-columns: 1fr;
-        gap: 40px;
-        text-align: center;
-    }
-
-    .skeleton-hero-text {
-        align-items: center;
-    }
-
-    .skeleton-name {
-        width: 240px;
-        height: 36px;
-    }
-
-    .skeleton-desc-line {
-        margin: 0 auto;
-    }
-
-    .skeleton-actions {
-        justify-content: center;
-    }
-
-    .skeleton-socials {
-        justify-content: center;
-    }
-
-    .skeleton-avatar-wrap {
-        width: 100%;
-        max-width: 320px;
-        height: 320px;
-    }
-
-    .skeleton-avatar-border {
-        width: 290px;
-        height: 290px;
     }
 }

@@ -30,57 +30,62 @@ const TYPING_TEXTS = [
 
 function SkeletonLoader({ isExiting }) {
   return (
-    <div className={`skeleton-container ${isExiting ? 'exiting' : ''}`}>
-      {/* Navbar Skeleton */}
-      <nav className="skeleton-navbar">
-        <div className="skeleton-logo bone"></div>
+    <div
+      className={`page-skeleton ${isExiting ? 'exiting' : ''}`}
+      role="status"
+      aria-live="polite"
+      aria-label="Loading Vaishnavi Hiremath portfolio"
+    >
+      <nav className="skeleton-nav" aria-hidden="true">
+        <div className="skeleton-block skeleton-logo"></div>
         <div className="skeleton-nav-links">
-          <div className="skeleton-nav-link skeleton-nav-link-about bone"></div>
-          <div className="skeleton-nav-link skeleton-nav-link-specialization bone"></div>
-          <div className="skeleton-nav-link skeleton-nav-link-portfolio bone"></div>
-          <div className="skeleton-nav-link skeleton-nav-link-experience bone"></div>
-          <div className="skeleton-nav-link skeleton-nav-link-education bone"></div>
-          <div className="skeleton-nav-link skeleton-nav-link-contact bone"></div>
+          <span className="skeleton-block skeleton-nav-about"></span>
+          <span className="skeleton-block skeleton-nav-specialization"></span>
+          <span className="skeleton-block skeleton-nav-projects"></span>
+          <span className="skeleton-block skeleton-nav-experience"></span>
+          <span className="skeleton-block skeleton-nav-education"></span>
+          <span className="skeleton-block skeleton-nav-contact"></span>
+        </div>
+        <div className="skeleton-menu-icon">
+          <span className="skeleton-block"></span>
+          <span className="skeleton-block"></span>
+          <span className="skeleton-block"></span>
         </div>
       </nav>
 
-      {/* Hero Skeleton */}
-      <div className="skeleton-hero">
-        <div className="skeleton-hero-content">
-          <div className="skeleton-hero-text">
-            <div className="skeleton-greeting bone"></div>
-            <div className="skeleton-name bone"></div>
-            <div className="skeleton-role bone"></div>
-            <div className="skeleton-desc">
-              <div className="skeleton-desc-line bone"></div>
-              <div className="skeleton-desc-line bone"></div>
-              <div className="skeleton-desc-line bone"></div>
+      <div className="skeleton-shell" aria-hidden="true">
+        <section className="skeleton-hero-layout">
+          <div className="skeleton-copy">
+            <div className="skeleton-block skeleton-kicker"></div>
+            <div className="skeleton-block skeleton-heading"></div>
+            <div className="skeleton-block skeleton-job-line"></div>
+            <div className="skeleton-paragraph">
+              <div className="skeleton-block"></div>
+              <div className="skeleton-block"></div>
+              <div className="skeleton-block"></div>
             </div>
-            <div className="skeleton-actions">
-              <div className="skeleton-btn skeleton-btn-primary bone"></div>
-              <div className="skeleton-btn skeleton-btn-outline"></div>
+            <div className="skeleton-actions-row">
+              <div className="skeleton-block skeleton-button"></div>
+              <div className="skeleton-block skeleton-button skeleton-button-light"></div>
             </div>
-            <div className="skeleton-socials">
-              <div className="skeleton-social bone"></div>
-              <div className="skeleton-social bone"></div>
-              <div className="skeleton-social bone"></div>
-            </div>
-          </div>
-          <div className="skeleton-hero-visual">
-            <div className="skeleton-avatar-wrap">
-              <div className="skeleton-avatar-border">
-                <div className="skeleton-avatar bone"></div>
-              </div>
+            <div className="skeleton-social-row">
+              <div className="skeleton-block skeleton-social-dot"></div>
+              <div className="skeleton-block skeleton-social-dot"></div>
+              <div className="skeleton-block skeleton-social-dot"></div>
             </div>
           </div>
-        </div>
+
+          <div className="skeleton-visual">
+            <div className="skeleton-block skeleton-figure"></div>
+          </div>
+        </section>
       </div>
     </div>
   );
 }
 
 function App() {
-  // ---- Skeleton Loading State ----
+  // ---- Initial Loading State ----
   const [isLoading, setIsLoading] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,15 +93,15 @@ function App() {
   const [submitMessage, setSubmitMessage] = useState('');
 
   useEffect(() => {
-    // Show skeleton for 2 seconds, then play exit animation
+    // Show the skeleton screen briefly, then reveal the page
     const timer = setTimeout(() => {
       setIsExiting(true);
-      // After exit animation completes (300ms), remove skeleton
+      // After exit animation completes, remove the loader
       setTimeout(() => {
         setIsLoading(false);
         setIsExiting(false);
-      }, 300);
-    }, 2000);
+      }, 280);
+    }, 1400);
 
     return () => clearTimeout(timer);
   }, []);
@@ -194,6 +199,11 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    document.body.classList.toggle('nav-menu-open', isNavOpen);
+
+    return () => document.body.classList.remove('nav-menu-open');
+  }, [isNavOpen]);
   // ---- Contact Form Handler with EmailJS ----
   const handleContactSubmit = async (e) => {
     e.preventDefault();
@@ -202,7 +212,7 @@ function App() {
 
     if (!hasEmailJsConfig) {
       setSubmitStatus('error');
-      setSubmitMessage('Email service is not configured yet. Please email me directly at vaishnavihiremath33@gmail.com.');
+      setSubmitMessage('Email service is not configured yet. Please email me directly at sagaralmad002@gmail.com.');
       return;
     }
 
@@ -213,15 +223,30 @@ function App() {
     const subject = String(formData.get('subject') || '').trim();
     const message = String(formData.get('message') || '').trim();
 
+    const messageSubject = subject || 'Portfolio contact form message';
+    const emailMessage = [
+      `Name: ${fromName}`,
+      `Email: ${fromEmail}`,
+      `Subject: ${messageSubject}`,
+      '',
+      'Message:',
+      message
+    ].join('\n');
+
     const templateParams = {
       from_name: fromName,
       from_email: fromEmail,
       reply_to: fromEmail,
-      subject: subject || 'Portfolio contact form message',
-      message,
+      subject: messageSubject,
+      message: emailMessage,
+      original_message: message,
       to_name: 'Vaishnavi Hiremath',
       user_name: fromName,
-      user_email: fromEmail
+      user_email: fromEmail,
+      name: fromName,
+      email: fromEmail,
+      title: messageSubject,
+      time: new Date().toLocaleString()
     };
 
     setIsSubmitting(true);
@@ -241,7 +266,7 @@ function App() {
     } catch (error) {
       console.error('EmailJS error:', error);
       setSubmitStatus('error');
-      setSubmitMessage('Failed to send message. Please try again or email me directly at vaishnavihiremath33@gmail.com.');
+      setSubmitMessage('Failed to send message. Please try again or email me directly at sagaralmad002@gmail.com.');
     } finally {
       setIsSubmitting(false);
     }
@@ -305,6 +330,8 @@ function App() {
           className="nav-toggle"
           id="navToggle"
           aria-label="Toggle menu"
+          aria-expanded={isNavOpen}
+          aria-controls="navLinks"
           onClick={() => setIsNavOpen(!isNavOpen)}
         >
           <span></span><span></span><span></span>
